@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct GasKurirApp: App {
@@ -13,5 +14,7 @@ struct GasKurirApp: App {
         WindowGroup {
             RootTabView()
         }
+        .modelContainer(for: [Warung.self, Transaksi.self, PembelianAgen.self, Konfigurasi.self])
+        
     }
 }

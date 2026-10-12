@@ -7,237 +7,248 @@
 
 import SwiftUI
 import Charts
-
-// MARK: - Warna
-
-extension Color {
-    /// Teal brand, sedikit lebih gelap agar kontras teks di atas latar putih lebih terbaca.
-    static let aksen = Color(red: 0.04, green: 0.56, blue: 0.54)
-    static let periodeSebelumnya = Color(red: 0.50, green: 0.56, blue: 0.85)
-}
-
-
-// MARK: - Beranda
+import SwiftData
 
 struct BerandaView: View {
 
     @StateObject private var viewModel = BerandaViewModel()
     @State private var adaNotifikasi = true
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .largeTitle) private var ukuranAngka: CGFloat = 52
 
-    // 2 kolom normal, 1 kolom saat ukuran teks aksesibilitas (Dynamic Type besar)
-    private var kolom: [GridItem] {
-        let jumlah = dynamicTypeSize.isAccessibilitySize ? 1 : 2
-        return Array(repeating: GridItem(.flexible(), spacing: 12), count: jumlah)
+    // 3 tile sejajar normal, 1 kolom saat ukuran teks aksesibilitas
+    private var kolomStok: [GridItem] {
+        let jumlah = dynamicTypeSize.isAccessibilitySize ? 1 : 3
+        return Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: jumlah)
     }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 24) {
                 header
-                kartuStatistik
-                grafikPenjualan
-                pengingatTabung
+                kartuUtama
+                kartuUtama
+
+                seksi("Stok & distribusi") { tileStok }
+                seksi("Penjualan hari ini") { grafikPenjualan }
+
+                if viewModel.adaPengingat {
+                    seksi("Pengingat") { pengingatTabung }
+                }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
+            .padding(.vertical, 8)
         }
         .scrollIndicators(.hidden)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(Color.latar.ignoresSafeArea())
+        .task { viewModel.muat(context: modelContext) }
+        .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave, object: modelContext)) { _ in
+            viewModel.muat(context: modelContext)
+        }
     }
 
-    // MARK: Header
+    // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.sapaan)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.sapaan)
+                        .font(.footnote.bold())
+                        .foregroundStyle(.primary)
+                    Text("\(viewModel.namaKurir)!")
+                        .font(.title2.bold())
+                        .foregroundStyle(.green)
+                }
 
-                Text("Rafli!")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(Color.aksen)
-
-                Text(viewModel.sapaan1)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                tombolNotifikasi
             }
 
-            Spacer(minLength: 0)
-
-            tombolNotifikasi
+            Text(viewModel.sapaan1)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private var tombolNotifikasi: some View {
         Button {
             // TODO: buka halaman notifikasi
+            print("Notif Ditekan")
         } label: {
             Image(systemName: "bell")
                 .font(.title3)
-                .foregroundStyle(Color.aksen)
+                .foregroundStyle(.primary)
                 .frame(width: 44, height: 44) // target sentuh minimal HIG
+                .background(Color.kartu, in: .circle)
                 .overlay(alignment: .topTrailing) {
                     if adaNotifikasi {
                         Circle()
                             .fill(.red)
                             .frame(width: 10, height: 10)
-                            .overlay(
-                                Circle().stroke(Color(.systemGroupedBackground), lineWidth: 2)
-                            )
-                            .padding(10)
+                            .overlay(Circle().stroke(Color.kartu, lineWidth: 2))
+                            .padding(8)
                     }
                 }
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Notifikasi")
         .accessibilityValue(adaNotifikasi ? "Ada yang baru" : "Tidak ada yang baru")
     }
 
-    // MARK: Kartu statistik
+    // MARK: - Kartu utama
 
-    private var kartuStatistik: some View {
-        LazyVGrid(columns: kolom, spacing: 12) {
-            KartuStatistikView(
-                judul: "Tabung Isi",
-                nilai: "\(viewModel.stokTabungIsi)",
-                ikon: "flame.fill",
-                warna: Color(red: 0.93, green: 0.30, blue: 0.46)
-            )
-            KartuStatistikView(
-                judul: "Tabung Kosong",
-                nilai: "\(viewModel.stokTabungKosong)",
-                ikon: "flame",
-                warna: Color(red: 0.96, green: 0.45, blue: 0.57)
-            )
-            KartuStatistikView(
-                judul: "Tabung Tertinggal",
-                nilai: "\(viewModel.tabungDiPelanggan)",
-                ikon: "arrow.left.arrow.right",
-                warna: .periodeSebelumnya
-            )
-            KartuStatistikView(
-                judul: "Terjual Hari Ini",
-                nilai: "\(viewModel.tabungTerjualHariIni)",
-                ikon: "shippingbox.fill",
-                warna: Color(red: 87.0 / 255, green: 89.0 / 255, blue: 201.0 / 255)
-            )
+    private var kartuUtama: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label("Tabung Isi", systemImage: "flame.fill")
+                .font(.subheadline.weight(.medium))
+
+            Text("\(viewModel.stokTabungIsi)")
+                .font(.system(size: ukuranAngka, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+
+            Text("siap diantar")
+                .font(.footnote)
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background(Color.biru)
+        .overlay(alignment: .bottomTrailing) {
+            // Hiasan halus, tidak dibaca VoiceOver
+            Image(systemName: "flame.fill")
+                .font(.system(size: 110))
+                .foregroundStyle(.white.opacity(0.12))
+                .offset(x: 24, y: 24)
+                .accessibilityHidden(true)
+        }
+        .clipShape(.rect(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tabung isi")
+        .accessibilityValue("\(viewModel.stokTabungIsi), siap diantar")
+    }
+
+    // MARK: - Tile stok
+
+    private var tileStok: some View {
+        LazyVGrid(columns: kolomStok, spacing: 10) {
+            TileStokView(judul: "Tabung Kosong", nilai: "\(viewModel.stokTabungKosong)",
+                         ikon: "flame", warna: .tileBiru)
+            TileStokView(judul: "Tabung Tertinggal", nilai: "\(viewModel.tabungDiPelanggan)",
+                         ikon: "arrow.left.arrow.right", warna: .tileMerah)
+            TileStokView(judul: "Tabung Terjual", nilai: "\(viewModel.tabungTerjualHariIni)",
+                         ikon: "shippingbox.fill", warna: .tileNavy)
         }
     }
 
-    // MARK: Grafik
+    // MARK: - Grafik
 
     private var grafikPenjualan: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Penjualan Hari Ini")
-                .font(.headline)
+        Chart(viewModel.dataPenjualan) { titik in
+            AreaMark(
+                x: .value("Waktu", titik.waktu),
+                yStart: .value("Dasar", 0),
+                yEnd: .value("Jumlah", titik.penjualan),
+                series: .value("Seri", "Hari ini")
+            )
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [Color.biruAksen.opacity(0.25), Color.biruAksen.opacity(0.02)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
 
-            Chart {
-                ForEach(viewModel.dataPenjualan) { titik in
-                    // Area di bawah garis "Hari ini"
-                    AreaMark(
-                        x: .value("Waktu", titik.waktu),
-                        yStart: .value("Dasar", 0),
-                        yEnd: .value("Jumlah", titik.penjualan),
-                        series: .value("Seri", "Hari ini")
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.orange.opacity(0.25), .orange.opacity(0.01)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.monotone)
+            LineMark(x: .value("Waktu", titik.waktu), y: .value("Jumlah", titik.penjualan))
+                .foregroundStyle(by: .value("Seri", "Hari ini"))
+                .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
 
-                    // Setiap garis punya series sendiri -> tidak lagi tersambung zig-zag
-                    LineMark(
-                        x: .value("Waktu", titik.waktu),
-                        y: .value("Jumlah", titik.penjualan)
-                    )
-                    .foregroundStyle(by: .value("Seri", "Hari ini"))
-                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                    .interpolationMethod(.monotone)
-
-                    LineMark(
-                        x: .value("Waktu", titik.waktu),
-                        y: .value("Jumlah", titik.sebelumnya)
-                    )
-                    .foregroundStyle(by: .value("Seri", "Periode sebelumnya"))
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .interpolationMethod(.monotone)
-                }
-            }
-            .chartForegroundStyleScale([
-                "Hari ini": Color.orange,
-                "Periode sebelumnya": Color.periodeSebelumnya
-            ])
-            .chartYScale(domain: .automatic(includesZero: true))
-            // Hanya 4 label agar tidak sesak di iPhone SE
-            .chartXAxis {
-                AxisMarks(values: ["00.00", "06.00", "12.00", "18.00"]) { _ in
-                    AxisValueLabel()
-                        .font(.caption2)
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
-                    AxisGridLine()
-                        .foregroundStyle(Color.secondary.opacity(0.2))
-                    AxisValueLabel()
-                        .font(.caption2)
-                }
-            }
-            .chartLegend(position: .bottom, alignment: .leading, spacing: 12)
-            .frame(height: 200)
+            LineMark(x: .value("Waktu", titik.waktu), y: .value("Jumlah", titik.sebelumnya))
+                .foregroundStyle(by: .value("Seri", "Periode sebelumnya"))
+                .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 4]))
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Color(.secondarySystemGroupedBackground),
-            in: .rect(cornerRadius: 20, style: .continuous)
-        )
+        .chartForegroundStyleScale([
+            "Hari ini": Color.biruAksen,
+            "Periode sebelumnya": Color.secondary.opacity(0.6)
+        ])
+        .chartYScale(domain: .automatic(includesZero: true))
+        .chartXAxis {
+            AxisMarks(values: ["00.00", "06.00", "12.00", "18.00"]) { _ in
+                AxisValueLabel().font(.caption2)
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
+                AxisGridLine().foregroundStyle(Color.secondary.opacity(0.2))
+                AxisValueLabel().font(.caption2)
+            }
+        }
+        .chartLegend(position: .bottom, alignment: .leading, spacing: 12)
+        .frame(height: 200)
+        .gayaKartu()
     }
 
-    // MARK: Pengingat
+    // MARK: - Pengingat
 
-    @ViewBuilder
     private var pengingatTabung: some View {
-        if viewModel.adaPengingat {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.red)
-                    .accessibilityHidden(true)
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+                .frame(width: 36, height: 36)
+                .background(Color.orange.opacity(0.14), in: .rect(cornerRadius: 10, style: .continuous))
+                .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Pengingat Tabung")
-                        .font(.subheadline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Pengingat Tabung")
+                    .font(.subheadline.weight(.semibold))
 
-                    Text("\(viewModel.namaWarungTerlambat) belum mengembalikan tabung selama \(viewModel.hariBelumKembali) hari.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
+                Text("\(viewModel.namaWarungTerlambat) belum mengembalikan tabung selama \(viewModel.hariBelumKembali) hari.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                Color(.secondarySystemGroupedBackground),
-                in: .rect(cornerRadius: 16, style: .continuous)
-            )
-            .accessibilityElement(children: .combine)
+
+            Spacer(minLength: 0)
+        }
+        .gayaKartu()
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Seksi
+
+    private func seksi<Content: View>(
+        _ judul: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(judul)
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            content()
         }
     }
 }
 
-// MARK: - Komponen Kartu
+// MARK: - Gaya kartu
 
-private struct KartuStatistikView: View {
+private extension View {
+    /// Kartu putih/abu sistem dengan sudut membulat, dipakai grafik dan pengingat.
+    func gayaKartu() -> some View {
+        self
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.kartu, in: .rect(cornerRadius: 20, style: .continuous))
+    }
+}
+
+// MARK: - Tile
+
+private struct TileStokView: View {
 
     let judul: String
     let nilai: String
@@ -248,43 +259,36 @@ private struct KartuStatistikView: View {
     @ScaledMetric private var ukuranIkon: CGFloat = 36
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // 2 baris dicadangkan agar tinggi semua tile sama; bebas membungkus di teks aksesibilitas
+        let aksesibilitas = dynamicTypeSize.isAccessibilitySize
+
+        VStack(alignment: .leading, spacing: 10) {
             Image(systemName: ikon)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(warna)
                 .frame(width: ukuranIkon, height: ukuranIkon)
-                .background(
-                    warna.opacity(0.15),
-                    in: .rect(cornerRadius: 10, style: .continuous)
-                )
+                .background(.white.opacity(0.2), in: .circle)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(nilai)
-                    .font(.title.bold())
-                    .foregroundStyle(.primary)
+                    .font(.title2.bold())
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 Text(judul)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    // 1 baris agar tinggi kartu seragam; boleh membungkus di ukuran teks aksesibilitas
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                    .minimumScaleFactor(0.85)
+                    .font(.footnote)
+                    .lineLimit(aksesibilitas ? Int.max : 2, reservesSpace: !aksesibilitas)
             }
         }
+        .foregroundStyle(.white)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(
-            Color(.secondarySystemGroupedBackground),
-            in: .rect(cornerRadius: 20, style: .continuous)
-        )
+        .padding(12)
+        .background(warna, in: .rect(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
 
 #Preview("Beranda") {
-    BerandaView()
+    BerandaView().modelContainer(PreviewData.container)
 }

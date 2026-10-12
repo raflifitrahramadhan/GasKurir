@@ -7,14 +7,15 @@
 
 import Foundation
 import Combine
+import SwiftData
 
 struct GreetingManager {
     let currentHour: Int
-    
+
     init(date: Date = Date()) {
         self.currentHour = Calendar.current.component(.hour, from: date)
     }
-    
+
     var sapaan: String {
         switch currentHour {
         case 5..<10:
@@ -27,7 +28,7 @@ struct GreetingManager {
             return "Selamat Malam"
         }
     }
-    
+
     var sapaan1: String {
         switch currentHour {
         case 5..<18:
@@ -48,46 +49,58 @@ struct TitikPenjualan: Identifiable {
 @MainActor
 final class BerandaViewModel: ObservableObject {
 
-    
     // Sapaan
     var sapaan: String {
         let manager: GreetingManager = GreetingManager()
         return manager.sapaan
     }
-    
+
     var sapaan1: String {
         let manager: GreetingManager = GreetingManager()
         return manager.sapaan1
     }
-    
-    
-    // Data ringkasan
-    @Published var namaKurir = "Rafli"
-    @Published var stokTabungIsi = 45
-    @Published var stokTabungKosong = 12
-    @Published var tabungDiPelanggan = 8
-    @Published var tabungTerjualHariIni = 18
 
-    // Data grafik sementara
-    @Published var dataPenjualan: [TitikPenjualan] = [
-        .init(waktu: "00.00", penjualan: 2, sebelumnya: 4),
-        .init(waktu: "04.00", penjualan: 4, sebelumnya: 3),
-        .init(waktu: "06.00", penjualan: 3, sebelumnya: 5),
-        .init(waktu: "08.00", penjualan: 8, sebelumnya: 6),
-        .init(waktu: "10.00", penjualan: 7, sebelumnya: 8),
-        .init(waktu: "12.00", penjualan: 14, sebelumnya: 9),
-        .init(waktu: "14.00", penjualan: 11, sebelumnya: 8),
-        .init(waktu: "16.00", penjualan: 10, sebelumnya: 9),
-        .init(waktu: "18.00", penjualan: 9, sebelumnya: 8),
-        .init(waktu: "20.00", penjualan: 12, sebelumnya: 11)
-    ]
+    // Data ringkasan (diisi dari SwiftData lewat muat(context:))
+    @Published var namaKurir = "Kurir"
+    @Published var stokTabungIsi = 0
+    @Published var stokTabungKosong = 0
+    @Published var tabungDiPelanggan = 0
+    @Published var tabungTerjualHariIni = 0
 
-    // Pengingat tabung
-    @Published var namaWarungTerlambat = "Warung Teh Ida"
-    @Published var hariBelumKembali = 5
-    @Published var tabungHilang = 3
+    // Data grafik
+    @Published var dataPenjualan: [TitikPenjualan] = []
+
+    // Pengingat tabung (warung yang paling lama menahan tabung)
+    @Published var namaWarungTerlambat = ""
+    @Published var hariBelumKembali = 0
+    @Published var tabungHilang = 0   // jumlah tabung yang belum kembali dari warung tsb
+
+    // Kalau pembacaan database gagal
+    @Published var pesanKesalahan: String?
 
     var adaPengingat: Bool {
-        hariBelumKembali >= 3
+        !namaWarungTerlambat.isEmpty
+    }
+
+    /// Dipanggil View saat muncul dan setiap kali data tersimpan.
+    func muat(context: ModelContext) {
+        do {
+            let hasil = try BerandaRepository(context: context).ringkasan()
+
+            namaKurir = hasil.namaKurir.isEmpty ? "Kurir" : hasil.namaKurir
+            stokTabungIsi = hasil.stokIsi
+            stokTabungKosong = hasil.stokKosong
+            tabungDiPelanggan = hasil.tabungDiPelanggan
+            tabungTerjualHariIni = hasil.tabungTerjualHariIni
+            dataPenjualan = hasil.dataPenjualan
+
+            namaWarungTerlambat = hasil.pengingat?.namaWarung ?? ""
+            hariBelumKembali = hasil.pengingat?.hari ?? 0
+            tabungHilang = hasil.pengingat?.jumlahTabung ?? 0
+
+            pesanKesalahan = nil
+        } catch {
+            pesanKesalahan = error.localizedDescription
+        }
     }
 }

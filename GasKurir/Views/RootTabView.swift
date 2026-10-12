@@ -18,40 +18,30 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Beranda", systemImage: "house.fill", value: AppTab.beranda) {
-                BerandaView()
-            }
-
-            Tab("Transaksi", systemImage: "scroll.fill", value: AppTab.transaksi) {
-                TransaksiView()
-            }
-
-            Tab("Laporan", systemImage: "chart.bar.fill", value: AppTab.laporan) {
-                LaporanView()
-            }
-
-            Tab("Pengaturan", systemImage: "gearshape.fill", value: AppTab.pengaturan) {
-                PengaturanView()
-            }
+            Tab("Beranda", systemImage: "house.fill", value: AppTab.beranda) { BerandaView() }
+            Tab("Transaksi", systemImage: "scroll.fill", value: AppTab.transaksi) { TransaksiView() }
+            Tab("Laporan", systemImage: "chart.bar.fill", value: AppTab.laporan) { LaporanView() }
+            Tab("Pengaturan", systemImage: "gearshape.fill", value: AppTab.pengaturan) { PengaturanView() }
         }
-        .tint(Color.aksen)
-        // Tab bar mengecil saat scroll -> ruang konten lebih lega di iPhone SE
+        .tint(Color.biruAksen)
         .tabBarMinimizeBehavior(.onScrollDown)
         // Pengganti tombol "+" tengah: aksi utama yang selalu tersedia di atas tab bar
-        .tabViewBottomAccessory {
-            Button {
-                tampilkanFormTambah = true
-            } label: {
-                Label("Tambah Transaksi", systemImage: "plus")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.aksen)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
-        }
+        .tabViewBottomAccessory { tombolTambah }
         .sheet(isPresented: $tampilkanFormTambah) {
             FormTambahPlaceholderView()
         }
+    }
+
+    private var tombolTambah: some View {
+        Button {
+            tampilkanFormTambah = true
+        } label: {
+            Label("Tambah Transaksi", systemImage: "plus")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.biruAksen)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 }
 
