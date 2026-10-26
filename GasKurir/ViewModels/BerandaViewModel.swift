@@ -60,8 +60,8 @@ final class BerandaViewModel: ObservableObject {
         return manager.sapaan1
     }
 
-    // Data ringkasan (diisi dari SwiftData lewat muat(context:))
-    @Published var namaKurir = "Kurir"
+    // data
+    @Published var namaKurir = "Rafli"
     @Published var stokTabungIsi = 0
     @Published var stokTabungKosong = 0
     @Published var tabungDiPelanggan = 0

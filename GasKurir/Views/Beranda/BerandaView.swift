@@ -18,6 +18,7 @@ struct BerandaView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var ukuranAngka: CGFloat = 52
 
     // 3 tile sejajar normal, 1 kolom saat ukuran teks aksesibilitas
+    
     private var kolomStok: [GridItem] {
         let jumlah = dynamicTypeSize.isAccessibilitySize ? 1 : 3
         return Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: jumlah)
@@ -27,7 +28,6 @@ struct BerandaView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 header
-                kartuUtama
                 kartuUtama
 
                 seksi("Stok & distribusi") { tileStok }
@@ -48,7 +48,7 @@ struct BerandaView: View {
         }
     }
 
-    // MARK: - Header
+    // header
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -75,7 +75,7 @@ struct BerandaView: View {
 
     private var tombolNotifikasi: some View {
         Button {
-            // TODO: buka halaman notifikasi
+            // todo
             print("Notif Ditekan")
         } label: {
             Image(systemName: "bell")
@@ -98,7 +98,7 @@ struct BerandaView: View {
         .accessibilityValue(adaNotifikasi ? "Ada yang baru" : "Tidak ada yang baru")
     }
 
-    // MARK: - Kartu utama
+    // primary card
 
     private var kartuUtama: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -111,7 +111,7 @@ struct BerandaView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
 
-            Text("siap diantar")
+            Text("Tabung siap diantar")
                 .font(.footnote)
         }
         .foregroundStyle(.white)
@@ -132,7 +132,7 @@ struct BerandaView: View {
         .accessibilityValue("\(viewModel.stokTabungIsi), siap diantar")
     }
 
-    // MARK: - Tile stok
+    //  stok
 
     private var tileStok: some View {
         LazyVGrid(columns: kolomStok, spacing: 10) {
@@ -145,7 +145,7 @@ struct BerandaView: View {
         }
     }
 
-    // MARK: - Grafik
+    // Grafik
 
     private var grafikPenjualan: some View {
         Chart(viewModel.dataPenjualan) { titik in
@@ -192,7 +192,7 @@ struct BerandaView: View {
         .gayaKartu()
     }
 
-    // MARK: - Pengingat
+    // Mwarning
 
     private var pengingatTabung: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -219,7 +219,7 @@ struct BerandaView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Seksi
+    // seksi
 
     private func seksi<Content: View>(
         _ judul: String,
@@ -234,10 +234,10 @@ struct BerandaView: View {
     }
 }
 
-// MARK: - Gaya kartu
+// style card
 
 private extension View {
-    /// Kartu putih/abu sistem dengan sudut membulat, dipakai grafik dan pengingat.
+    // card putih abu
     func gayaKartu() -> some View {
         self
             .padding(16)
@@ -246,7 +246,7 @@ private extension View {
     }
 }
 
-// MARK: - Tile
+// tile
 
 private struct TileStokView: View {
 

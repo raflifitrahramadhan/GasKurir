@@ -64,8 +64,8 @@ struct BerandaRepository {
 
     // MARK: - Grafik penjualan
 
-    /// Blok 2 jam (00.00 ... 22.00), hanya sampai jam sekarang.
-    /// "sebelumnya" = blok jam yang sama kemarin.
+    // Blok 2 jam (00.00 ... 22.00), hanya sampai jam sekarang.
+    // "sebelumnya" = blok jam yang sama kemarin.
     private func titikPenjualan(dari transaksi: [Transaksi], sekarang: Date) -> [TitikPenjualan] {
         let kalender = Calendar.current
         let kemarin = kalender.date(byAdding: .day, value: -1, to: sekarang) ?? sekarang
@@ -96,7 +96,7 @@ struct BerandaRepository {
 
     // MARK: - Pengingat
 
-    /// Warung yang masih menahan tabung paling lama, dan sudah melewati ambang hari.
+    // Warung yang masih menahan tabung paling lama, dan sudah melewati ambang hari.
     private func cariPengingat(
         dari transaksi: [Transaksi],
         ambangHari: Int,
