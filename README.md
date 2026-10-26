@@ -2,6 +2,11 @@
 
 A native iOS app for LPG gas couriers to record deliveries, track unreturned cylinders, and follow up on unpaid balances.
 
+![Platform](https://img.shields.io/badge/platform-iOS%2026%2B-blue)
+![Language](https://img.shields.io/badge/language-Swift-orange)
+![UI](https://img.shields.io/badge/UI-SwiftUI-informational)
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
+
 ## Table of Contents
 
 - [About](#about)
